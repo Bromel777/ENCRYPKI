@@ -24,7 +24,7 @@ import scorex.crypto.signatures.{Curve25519, PrivateKey, PublicKey, Signature}
 //  new EncryApp(args).run()
 object EncryApp extends App{
 //  val block = new EncryBlockHeader(
-//    99.toByte, ModifierId @@ Longs.toByteArray(999L), Digest32 @@ Array[Byte](32), 898989L, 0, targetedDiff = 2)
+//    99.toByte, ModifierId d@@ Longs.toByteArray(999L), Digest32 @@ Array[Byte](32), 898989L, 0, targetedDiff = 2)
 //
 //  println("Block Hash > " + Base16.encode(block.powHash))
 //  println("Nonce > " + block.nonce)
