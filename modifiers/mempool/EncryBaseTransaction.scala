@@ -3,13 +3,15 @@ package encry.modifiers.mempool
 import com.google.common.primitives.{Bytes, Longs}
 import encry.modifiers.mempool.box.EncryBaseBox
 import encry.modifiers.mempool.box.body.BaseBoxBody
+import scorex.core.PersistentNodeViewModifier
 import scorex.core.serialization.JsonSerializable
 import scorex.core.transaction.Transaction
 import scorex.core.transaction.box.BoxUnlocker
 import scorex.core.transaction.box.proposition.Proposition
+import scorex.crypto.authds.ADKey
 import scorex.utils.ByteArray
 
-abstract class EncryBaseTransaction[P <: Proposition, BB <: BaseBoxBody, BX <: EncryBaseBox[P, BB]]
+abstract class EncryBaseTransaction[P <: Proposition, BB <: BaseBoxBody]
   extends Transaction[P] with JsonSerializable{
 
   // TODO: Implement custom `NoncedBox` --DONE
@@ -29,20 +31,21 @@ abstract class EncryBaseTransaction[P <: Proposition, BB <: BaseBoxBody, BX <: E
 
   // `BoxUnlocker` holds ID and Key of the box to open (Sequence of `Tx Inputs` + Keys to unlock them).
   // TODO: Implement `BoxUnlocker` and `Proof`. --DONE
-  val unlockers: Traversable[BoxUnlocker[P]]
+  val unlockers: Traversable[ADKey]
   // Sequence of `Tx Outputs`.
-  val newBoxes: Traversable[BX]
+  //val newBoxes: Traversable[]
 
   val fee: Long
   val timestamp: Long
 
-  override lazy val messageToSign: Array[Byte] =
-    Bytes.concat(
-      Array[Byte](typeId),
-      if (newBoxes.nonEmpty) scorex.core.utils.concatBytes(newBoxes.map(_.bytes)) else Array[Byte](),
-      scorex.core.utils.concatFixLengthBytes(unlockers.map(_.closedBoxId)),
-      Longs.toByteArray(timestamp),
-      Longs.toByteArray(fee))
+  override val messageToSign: Array[Byte]
+//  =
+//    Bytes.concat(
+//      Array[Byte](typeId),
+//      if (newBoxes.nonEmpty) scorex.core.utils.concatBytes(newBoxes.map(_.bytes)) else Array[Byte](),
+//      scorex.core.utils.concatFixLengthBytes(unlockers),
+//      Longs.toByteArray(timestamp),
+//      Longs.toByteArray(fee))
 
 }
 

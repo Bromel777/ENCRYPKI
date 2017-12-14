@@ -34,23 +34,21 @@ object EncryApp extends App{
 //  println("Block Hash > " + Base16.encode(block.powHash))
 //  println("Nonce > " + block.nonce)
 //
-  val OutputNullTX1 = IndexedSeq((ADKey @@ "firstOutputIndex".getBytes))
-  val OutputNullTX2 = IndexedSeq((ADKey @@ "secondOutputIndex".getBytes))
+  val InputNullTX1 = IndexedSeq((ADKey @@ "firstOutputIndex".getBytes))
+  val InputNullTX2 = IndexedSeq((ADKey @@ "secondOutputIndex".getBytes))
   val keyPair = Curve25519.createKeyPair("Bars".getBytes())
   val pubKey : PublicKey = keyPair._2
   val priKey : PrivateKey = keyPair._1
-  val prop = PublicKey25519Proposition(pubKey)
+  val recepientProp = PublicKey25519Proposition(pubKey)
+  val senderProp = PublicKey25519Proposition(pubKey)
   val sigTX1 = Signature25519(Curve25519.sign(priKey,"firstTransaction".getBytes))
   val sigTX2 = Signature25519(Curve25519.sign(priKey,"secondTransaction".getBytes))
 
-  val sigNullSeqTX1 : IndexedSeq[Signature25519] = IndexedSeq(sigTX1)
-  val sigNullSeqTX2 : IndexedSeq[Signature25519] = IndexedSeq(sigTX2)
-
   //val InputNull = IndexedSeq((PublicKey25519Proposition(PublicKey @@ Longs.toByteArray(123L)),12L))
-  val InputNullTX1 = IndexedSeq((prop,12L))
-  val InputNullTX2 = IndexedSeq((prop,15L))
-  val BaseTX1 = EncryPaymentTransaction(12,123L,OutputNullTX1,sigNullSeqTX1,InputNullTX1)
-  val BaseTX2 = EncryPaymentTransaction(28,124L,OutputNullTX2,sigNullSeqTX2,InputNullTX2)
+  val OutputNullTX1 = IndexedSeq((recepientProp,12L))
+  val OutputNullTX2 = IndexedSeq((recepientProp,15L))
+  val BaseTX1 = EncryPaymentTransaction(senderProp,12L,123L,InputNullTX1,sigTX1,OutputNullTX1)
+  val BaseTX2 = EncryPaymentTransaction(senderProp,28L,124L,InputNullTX2,sigTX2,OutputNullTX2)
 //
 ////  for(a <- BaseTX.unlockers){
 ////    println(a.boxKey)

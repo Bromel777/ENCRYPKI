@@ -1,6 +1,7 @@
 package encry.modifiers.mempool.box
 
 import encry.modifiers.mempool.box.body.PaymentBoxBody
+import encry.modifiers.state.box.serializers.BoxCompanionSerializer
 import io.circe.Json
 import io.circe.syntax._
 import scorex.core.serialization.{JsonSerializable, Serializer}
@@ -8,20 +9,20 @@ import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 
 import scala.util.Try
 
-case class EncryPaymentBox(override val proposition: PublicKey25519Proposition,
+case class EncryPaymentBox(override val proposition: AddressProposition,
                            override val nonce: Long,
                            override val body: PaymentBoxBody)
-  extends EncryPublicKeyNoncedBox[PublicKey25519Proposition, PaymentBoxBody] {
+  extends EncryAddressNoncedBox[PaymentBoxBody] {
 
   override type M = EncryPaymentBox
 
   override def json: Json = ???
 
-  override def serializer: Serializer[EncryPaymentBox] = EncryPaymentBoxSerializer
+  override def serializer: BoxCompanionSerializer[EncryPaymentBox] = EncryPaymentBoxSerializer
 
 }
 
-object EncryPaymentBoxSerializer extends Serializer[EncryPaymentBox] {
+object EncryPaymentBoxSerializer extends BoxCompanionSerializer[EncryPaymentBox] {
 
   val Length: Int = 8
 
