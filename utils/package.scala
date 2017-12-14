@@ -1,6 +1,7 @@
 package encry
 
 package object utils {
+
   def concatBytes(seq: Traversable[Array[Byte]]): Array[Byte] = {
     val length: Int = seq.map(_.length).sum
     val result: Array[Byte] = new Array[Byte](length)
@@ -11,4 +12,6 @@ package object utils {
     }
     result
   }
+
+
 }

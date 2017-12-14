@@ -3,17 +3,20 @@ package encry.nodeView.mempool
 
 import encry.modifiers.mempool.{EncryBaseTransaction, EncryPaymentTransaction}
 import encry.nodeView.mempool.EncryMempool._
-import scorex.core.ModifierId
-import scorex.core.transaction.MemoryPool
+import scorex.core.{EphemerealNodeViewModifier, ModifierId, NodeViewComponent}
+import scorex.core.transaction.{MemoryPool, Transaction}
+import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.crypto.hash.Digest32
 
 import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.HashSet.HashTrieSet
 import scala.collection.mutable
 import scala.concurrent.{Future, Promise}
 import scala.util.{Success, Try}
 
-class EncryMempool private[mempool](val unconfirmed: mutable.ListMap[TxKey, EncryPaymentTransaction])
-  extends MemoryPool[EncryPaymentTransaction, EncryMempool] {
+class EncryMempool private[mempool](val unconfirmed: TrieMap[TxKey, EphemerealNodeViewModifier],val boxes : mutable.HashSet[Int])
+    //extends MemoryPool[Transaction[_], EncryMempool] {
+  extends NodeViewComponent{
 
   override type NVCT = EncryMempool
 
@@ -25,56 +28,76 @@ class EncryMempool private[mempool](val unconfirmed: mutable.ListMap[TxKey, Encr
   private[mempool] var waitedForAssembly: Map[Set[TxKey], (Promise[MemPoolResponse], Seq[ModifierId])] = Map.empty
 
   private def key(id: ModifierId): TxKey = {
+    println(new mutable.WrappedArray.ofByte(id))
     new mutable.WrappedArray.ofByte(id)
   }
 
-  override def getById(id: ModifierId): Option[EncryPaymentTransaction] = unconfirmed.get(key(id))
+   def getById(id: ModifierId): Option[EphemerealNodeViewModifier] = unconfirmed.get(key(id))
 
-  override def contains(id: ModifierId): Boolean = unconfirmed.contains(key(id))
+   def contains(id: ModifierId): Boolean = unconfirmed.contains(key(id))
 
-  override def getAll(ids: Seq[ModifierId]): Seq[EncryPaymentTransaction] = ids.flatMap(getById)
+   def getAll(ids: Seq[ModifierId]): Seq[EphemerealNodeViewModifier] = ids.flatMap(getById)
 
-  override def put(tx: EncryPaymentTransaction): Try[EncryMempool] = {
+   def put(tx: EphemerealNodeViewModifier): Try[EncryMempool] = {
     put(Seq(tx))
   }
 
-  override def put(txs: Iterable[EncryPaymentTransaction]): Try[EncryMempool] = Try {
+   def put(txs: Iterable[EphemerealNodeViewModifier]): Try[EncryMempool] = Try {
     txs.foreach(tx => {
-      //require(!unconfirmed.contains(key(ModifierId @@ tx.hashNoNonces)))
+
     })
     //todo check validity
     putWithoutCheck(txs)
   }
 
-  override def putWithoutCheck(txs: Iterable[EncryPaymentTransaction]): EncryMempool = {
-    txs.foreach(tx => {
-      println("Add:" + tx.signatures)
-      unconfirmed.put(key(ModifierId @@ tx.hashNoNonces), tx)
+   def putWithoutCheck(txs: Iterable[EphemerealNodeViewModifier]): EncryMempool = {
+    txs.foreach(tx => tx match {
+      case tx:EncryPaymentTransaction =>{
+            println("Add:" + tx.hashNoNonces)
+            unconfirmed.put(key(ModifierId @@ tx.trxHash), tx)
+      }
+      case _ => println("Incorrect Transaction")
+
     })
+//    println("Add:" + tx.hashNoNonces)
+//    unconfirmed.put(key(ModifierId @@ tx.trxHash), tx)
     //completeAssembly(txs)
     //todo cleanup?
     this
   }
 
-  override def remove(tx: EncryPaymentTransaction): EncryMempool = {
-    unconfirmed.remove(key(ModifierId @@ tx.hashNoNonces))
+   def remove(tx: EphemerealNodeViewModifier): EncryMempool = {
+    unconfirmed.remove(
+      tx match{
+        case tx:EncryPaymentTransaction =>{
+          key(ModifierId @@ tx.trxHash)
+        }
+      }
+
+    )
     this
   }
 
-  override def take(limit: Int): Iterable[EncryPaymentTransaction] =
+   def take(limit: Int): Iterable[EphemerealNodeViewModifier] =
     unconfirmed.values.toSeq.take(limit)
 
-  override def filter(condition: (EncryPaymentTransaction) => Boolean): EncryMempool = {
+   def filter(condition: (EphemerealNodeViewModifier) => Boolean): EncryMempool = {
     unconfirmed.retain { (k, v) =>
       condition(v)
     }
     this
   }
 
-  override def size: Int = unconfirmed.size
+   def size: Int = unconfirmed.size
 
-  private def completeAssembly(txs: Iterable[EncryPaymentTransaction]): Unit = synchronized {
-    val txsIds = txs.map(tx => key(ModifierId @@ tx.hashNoNonces))
+  private def completeAssembly(txs: Iterable[EphemerealNodeViewModifier]): Unit = synchronized {
+    val txsIds = txs.map(
+      tx => tx match{
+        case tx:EncryPaymentTransaction =>{
+          key(ModifierId @@ tx.trxHash)
+        }
+      }
+    )
     val newMap = waitedForAssembly.flatMap(p => {
       val ids = p._1
       val newKey = ids -- txsIds
@@ -91,7 +114,7 @@ class EncryMempool private[mempool](val unconfirmed: mutable.ListMap[TxKey, Encr
   }
 
   def waitForAll(ids: MemPoolRequest): Future[MemPoolResponse] = synchronized {
-    val promise = Promise[Seq[EncryPaymentTransaction]]
+    val promise = Promise[Seq[EphemerealNodeViewModifier]]
     waitedForAssembly = waitedForAssembly.updated(ids.map(id => key(id)).toSet, (promise, ids))
     promise.future
   }
@@ -102,7 +125,7 @@ object EncryMempool {
 
   type MemPoolRequest = Seq[ModifierId]
 
-  type MemPoolResponse = Seq[EncryPaymentTransaction]
+  type MemPoolResponse = Seq[EphemerealNodeViewModifier]
 
-  def empty: EncryMempool = new EncryMempool(mutable.ListMap.empty)
+  def empty: EncryMempool = new EncryMempool(TrieMap.empty,mutable.HashSet.empty)
 }

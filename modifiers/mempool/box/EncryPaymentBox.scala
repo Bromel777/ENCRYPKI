@@ -23,6 +23,8 @@ case class EncryPaymentBox(override val proposition: PublicKey25519Proposition,
 
 object EncryPaymentBoxSerializer extends Serializer[EncryPaymentBox] {
 
+  val Length: Int = 8
+
   override def toBytes(obj: EncryPaymentBox): Array[Byte] = ???
 
   override def parseBytes(bytes: Array[Byte]): Try[EncryPaymentBox] = ???

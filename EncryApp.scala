@@ -3,7 +3,7 @@ package encry
 import com.google.common.primitives._
 import scorex.crypto.hash.{Digest32, Sha256}
 import scorex.core.block.Block._
-import scorex.core.{ModifierId, ModifierTypeId}
+import scorex.core.{EphemerealNodeViewModifier, ModifierId, ModifierTypeId}
 import scorex.core.app.{Application, Version}
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.crypto.encode.Base16
@@ -33,8 +33,9 @@ object EncryApp extends App{
 //
 //  println("Block Hash > " + Base16.encode(block.powHash))
 //  println("Nonce > " + block.nonce)
-
-  val OutputNull = IndexedSeq((ADKey @@ "firstTransaction".getBytes))
+//
+  val OutputNullTX1 = IndexedSeq((ADKey @@ "firstOutputIndex".getBytes))
+  val OutputNullTX2 = IndexedSeq((ADKey @@ "secondOutputIndex".getBytes))
   val keyPair = Curve25519.createKeyPair("Bars".getBytes())
   val pubKey : PublicKey = keyPair._2
   val priKey : PrivateKey = keyPair._1
@@ -46,21 +47,36 @@ object EncryApp extends App{
   val sigNullSeqTX2 : IndexedSeq[Signature25519] = IndexedSeq(sigTX2)
 
   //val InputNull = IndexedSeq((PublicKey25519Proposition(PublicKey @@ Longs.toByteArray(123L)),12L))
-  val InputNull = IndexedSeq((prop,12L))
-  val BaseTX1 = EncryPaymentTransaction(12,123L,OutputNull,sigNullSeqTX1,InputNull)
-  val BaseTX2 = EncryPaymentTransaction(28,106L,OutputNull,sigNullSeqTX2,InputNull)
-
-//  for(a <- BaseTX.unlockers){
-//    println(a.boxKey)
-//  }
-
-  val txTree = List(BaseTX1,BaseTX2)
+  val InputNullTX1 = IndexedSeq((prop,12L))
+  val InputNullTX2 = IndexedSeq((prop,15L))
+  val BaseTX1 = EncryPaymentTransaction(12,123L,OutputNullTX1,sigNullSeqTX1,InputNullTX1)
+  val BaseTX2 = EncryPaymentTransaction(28,124L,OutputNullTX2,sigNullSeqTX2,InputNullTX2)
+//
+////  for(a <- BaseTX.unlockers){
+////    println(a.boxKey)
+////  }
+//
+////  BaseTX1.hashOutputs.foreach(print)
+////  println()
+////  BaseTX2.hashOutputs.foreach(print)
+//
+  val txTree = List(BaseTX1,BaseTX2).map{tx => tx.asInstanceOf[EphemerealNodeViewModifier]}
   val tmf = EncryMempool.empty
   tmf.put(txTree)
   val txtr = tmf.unconfirmed
   for((a,b) <- txtr){
-    println("in mempool " + b.fee)
+      b match {
+        case tx : EncryPaymentTransaction =>{
+          println(tx.fee)
+        }
+      }
   }
+//  val a :TrieMap[Int, EncryPaymentTransaction] = TrieMap.empty
+//  a.put(1,BaseTX1)
+//  a.put(2,BaseTX2)
+//  for((a,b) <- a){
+//    println("in mempool " + b.fee)
+//  }
 
 //  println(new mutable.WrappedArray.ofByte(BaseTX2.hashNoNonces))
 

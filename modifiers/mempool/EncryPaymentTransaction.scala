@@ -70,6 +70,18 @@ case class EncryPaymentTransaction(override val fee: Amount,
     )
   )
 
+  //В дальнейшем используется как TXkey для поиска в mempool
+
+  lazy val trxHash: Digest32 = Algos.hash(
+    scorex.core.utils.concatFixLengthBytes(
+      useOutputs.zip(signatures).map{
+        case(boxId,sign) => {
+          boxId
+        }
+      }
+    )
+  )
+
 }
 
 object EncryPaymentTransactionSerializer extends Serializer[EncryPaymentTransaction] {
